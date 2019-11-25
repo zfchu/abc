@@ -15,6 +15,7 @@ OS := $(shell uname -s)
 
 MODULES := \
 	$(wildcard src/ext*) \
+	src/also/img \
 	src/base/abc src/base/abci src/base/cmd src/base/io src/base/main src/base/exor \
 	src/base/ver src/base/wlc src/base/wln src/base/acb src/base/bac src/base/cba src/base/pla src/base/test \
 	src/map/mapper src/map/mio src/map/super src/map/if \
@@ -54,7 +55,7 @@ ARCHFLAGS := $(ARCHFLAGS)
 
 OPTFLAGS  ?= -g -O
 
-CFLAGS    += -Wall -Wno-unused-function -Wno-write-strings -Wno-sign-compare $(ARCHFLAGS)
+CFLAGS    += -Wall -Wno-unused-function -Wno-write-strings -Wno-sign-compare -Wno-incompatible-pointer-types $(ARCHFLAGS)
 ifneq ($(findstring arm,$(shell uname -m)),)
 	CFLAGS += -DABC_MEMALIGN=4
 endif
