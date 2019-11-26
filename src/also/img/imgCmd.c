@@ -75,7 +75,7 @@ int img_command( Abc_Frame_t * pAbc, int argc, int ** argv ){
     return 0;
 
     usage:
-    Abc_Print( -2, "usage: img [-vh] \n" );
+    Abc_Print( -2, "usage: img [-vh]\n" );
     Abc_Print( -2, "\t print the information of the img network\n " );
     Abc_Print( -2, "\t -v : toggle printing verbose information\n " );
     Abc_Print( -2, "\t -h : print the command usage\n " );

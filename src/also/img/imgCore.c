@@ -75,13 +75,13 @@ int printImgInfo( Abc_Ntk_t * pNtk ) {
     return 0;
   }
 
-  Abc_Print( 1, "\t-  Type:  %d\n", pNtk->ntkType );
-  Abc_Print( 1, "\t-  Level: %d\n", Abc_AigLevel( pNtk ) );
   //print information of the implication logic network
-  Abc_Print( 1, "\t- %d primary inputs;\n ", Abc_NtkPiNum( pNtk ) );
-  Abc_Print( 1, "\t- %d primary outputs;\n ", Abc_NtkPoNum( pNtk ) );
-  Abc_Print( 1, "\t- %d AND gates.\n ", Abc_NtkNodeNum( pNtk ) );
-  
+  Abc_Print( 1, "\t- Type:  %d\n", pNtk->ntkType );
+  Abc_Print( 1, "\t- Level: %d\n", Abc_AigLevel( pNtk ) );
+  Abc_Print( 1, "\t- %d primary inputs;\n", Abc_NtkPiNum( pNtk ) );
+  Abc_Print( 1, "\t- %d primary outputs;\n", Abc_NtkPoNum( pNtk ) );
+  Abc_Print( 1, "\t- %d AND gates.\n", Abc_NtkNodeNum( pNtk ) );
+
   return 1;
 }
 
