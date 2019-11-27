@@ -63,6 +63,8 @@ void If_ManSetDefaultPars( If_Par_t * pPars )
     pPars->fCutMin     =  0;
     pPars->fBidec      =  0;
     pPars->fVerbose    =  0;
+
+    pPars->fTruth = 1; //compute truth tables
 }
 
 

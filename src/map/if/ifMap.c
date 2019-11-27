@@ -20,6 +20,7 @@
 
 #include "if.h"
 #include "misc/extra/extra.h"
+#include "bool/kit/kit.h"
 
 ABC_NAMESPACE_IMPL_START
 
@@ -30,6 +31,10 @@ ABC_NAMESPACE_IMPL_START
 extern char * Dau_DsdMerge( char * pDsd0i, int * pPerm0, char * pDsd1i, int * pPerm1, int fCompl0, int fCompl1, int nVars );
 extern int    If_CutDelayRecCost3( If_Man_t* p, If_Cut_t* pCut, If_Obj_t * pObj );
 extern int    Abc_ExactDelayCost( word * pTruth, int nVars, int * pArrTimeProfile, char * pPerm, int * Cost, int AigLevel );
+
+
+static int Abc_NtkRenodeEvalImg( If_Man_t * p, If_Cut_t * pCut );
+static Vec_Int_t * s_vMemory  = NULL;  
 
 ////////////////////////////////////////////////////////////////////////
 ///                     FUNCTION DEFINITIONS                         ///
@@ -412,8 +417,10 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
         }
         
         // compute the application-specific cost and depth
+        p->pPars->pFuncCost = Abc_NtkRenodeEvalImg;
         pCut->fUser = (p->pPars->pFuncCost != NULL);
         pCut->Cost = p->pPars->pFuncCost? p->pPars->pFuncCost(p, pCut) : 0;
+        //printf( "cost: %d \n", pCut->Cost );
         if ( pCut->Cost == IF_COST_MAX )
             continue;
         // check if the cut satisfies the required times
@@ -489,6 +496,24 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
             p->pPars->pFuncUser( p, pObj, pCut );
     // free the cuts
     If_ManDerefNodeCutSet( p, pObj );
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Compute a user defined cost by implication logic network.]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+int Abc_NtkRenodeEvalImg( If_Man_t * p, If_Cut_t * pCut )  
+{    
+  printf( "TT ID: %d\n", Abc_Lit2Var( pCut->iCutFunc ) );
+  If_CutPrint( pCut );
+  return If_CutLeaveNum( pCut );
 }
 
 /**Function*************************************************************
