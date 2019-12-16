@@ -37,7 +37,7 @@ static int             Mio_LibraryReadInternal( Mio_Library_t * pLib, char * pBu
 static Mio_Gate_t *    Mio_LibraryReadGate( char ** ppToken, int fExtendedFormat );
 static Mio_Pin_t *     Mio_LibraryReadPin( char ** ppToken, int fExtendedFormat );
 static char *          chomp( char *s );
-static void            Mio_LibraryDetectSpecialGates( Mio_Library_t * pLib );
+static void            Mio_LibraryDetectSpecialGates( Mio_Library_t * pLib, int fVerbose );
 static void            Io_ReadFileRemoveComments( char * pBuffer, int * pnDots, int * pnLines );
 
 /**Function*************************************************************
@@ -180,7 +180,7 @@ Mio_Library_t * Mio_LibraryReadBuffer( char * pBuffer, int fExtendedFormat, st__
     }
 
     // detect INV and NAND2
-    Mio_LibraryDetectSpecialGates( pLib );
+    Mio_LibraryDetectSpecialGates( pLib, 0 );
 //Mio_WriteLibrary( stdout, pLib );
     return pLib;
 }
@@ -624,7 +624,7 @@ static inline Mio_Gate_t * Mio_GateCompare( Mio_Gate_t * pThis, Mio_Gate_t * pNe
         return pNew;
     return pThis;
 }
-void Mio_LibraryDetectSpecialGates( Mio_Library_t * pLib )
+void Mio_LibraryDetectSpecialGates( Mio_Library_t * pLib, int fVerbose )
 {
     Mio_Gate_t * pGate;
     word uFuncBuf, uFuncInv, uFuncNand2, uFuncAnd2, uFuncNor2, uFuncOr2;
@@ -641,7 +641,7 @@ void Mio_LibraryDetectSpecialGates( Mio_Library_t * pLib )
     // get smallest-area buffer
     Mio_LibraryForEachGate( pLib, pGate )
         pLib->pGateBuf = Mio_GateCompare( pLib->pGateBuf, pGate, uFuncBuf );
-    if ( pLib->pGateBuf == NULL )
+    if ( pLib->pGateBuf == NULL && fVerbose )
     {
         printf( "Warnings: genlib library reader cannot detect the buffer gate.\n" );
         printf( "Some parts of the supergate-based technology mapper may not work correctly.\n" );
@@ -650,7 +650,7 @@ void Mio_LibraryDetectSpecialGates( Mio_Library_t * pLib )
     // get smallest-area inverter
     Mio_LibraryForEachGate( pLib, pGate )
         pLib->pGateInv = Mio_GateCompare( pLib->pGateInv, pGate, uFuncInv );
-    if ( pLib->pGateInv == NULL )
+    if ( pLib->pGateInv == NULL && fVerbose )
     {
         printf( "Warnings: genlib library reader cannot detect the invertor gate.\n" );
         printf( "Some parts of the supergate-based technology mapper may not work correctly.\n" );
@@ -664,7 +664,7 @@ void Mio_LibraryDetectSpecialGates( Mio_Library_t * pLib )
         pLib->pGateNor2 = Mio_GateCompare( pLib->pGateNor2, pGate, uFuncNor2 );
         pLib->pGateOr2 = Mio_GateCompare( pLib->pGateOr2, pGate, uFuncOr2 );
     }
-    if ( pLib->pGateAnd2 == NULL && pLib->pGateNand2 == NULL && pLib->pGateNor2 == NULL && pLib->pGateOr2 == NULL )
+    if ( pLib->pGateAnd2 == NULL && pLib->pGateNand2 == NULL && pLib->pGateNor2 == NULL && pLib->pGateOr2 == NULL && fVerbose )
     {
         printf( "Warnings: genlib library reader cannot detect the AND2, NAND2, OR2, and NOR2 gate.\n" );
         printf( "Some parts of the supergate-based technology mapper may not work correctly.\n" );

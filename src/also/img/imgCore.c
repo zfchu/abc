@@ -15,6 +15,7 @@
 ***********************************************************************/
 
 #include "base/main/main.h"
+#include "map/mio/mio.h"
 
 ABC_NAMESPACE_IMPL_START
 
@@ -23,6 +24,7 @@ ABC_NAMESPACE_IMPL_START
 ////////////////////////////////////////////////////////////////////////
 
 int printImgInfo( Abc_Ntk_t * pNtk );
+Abc_Ntk_t * AigMap2Img( Abc_Ntk_t * pNtk );
 
 ////////////////////////////////////////////////////////////////////////
 ///                     FUNCTION DEFINITIONS                         ///
@@ -39,9 +41,9 @@ int printImgInfo( Abc_Ntk_t * pNtk );
   SeeAlso     []
 
 ***********************************************************************/
-int Img_RunMain( Abc_Frame_t * pAbc ) {
+int Img_RunMain( Abc_Frame_t * pAbc ) 
+{
   Abc_Ntk_t * pNtk;
-  int result;
 
   pNtk = Abc_FrameReadNtk( pAbc );
 
@@ -50,9 +52,12 @@ int Img_RunMain( Abc_Frame_t * pAbc ) {
     return 0;
   }
 
-  result = printImgInfo( pNtk );
+  //result = printImgInfo( pNtk );
+  Abc_Ntk_t * pNtkRes = AigMap2Img( pNtk );
 
-  return result;
+  Abc_FrameReplaceCurrentNetwork( pAbc, pNtkRes );
+
+  return 1;
 }
  
 /**Function*************************************************************
@@ -67,7 +72,8 @@ int Img_RunMain( Abc_Frame_t * pAbc ) {
 
 ***********************************************************************/
 
-int printImgInfo( Abc_Ntk_t * pNtk ) {
+int printImgInfo( Abc_Ntk_t * pNtk ) 
+{
 
   //check if the network is strashed
   if( !Abc_NtkIsStrash( pNtk ) ){
@@ -88,7 +94,7 @@ int printImgInfo( Abc_Ntk_t * pNtk ) {
 
 /**Function*************************************************************
 
-  Synopsis    []
+  Synopsis    [map AIG into implication logic networks]
 
   Description []
                
@@ -97,6 +103,74 @@ int printImgInfo( Abc_Ntk_t * pNtk ) {
   SeeAlso     []
 
 ***********************************************************************/
+Abc_Ntk_t * AigMap2Img( Abc_Ntk_t * pNtk )
+{
+  Abc_Ntk_t * pNtkRes;
+  extern Abc_Ntk_t * Abc_NtkMap( Abc_Ntk_t * pNtk, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose );
+  
+  //check if the network is strashed
+  if( !Abc_NtkIsStrash( pNtk ) )
+  {
+    Abc_Print( -1, " img: This command is only applicable to strashed networks.\n " );
+    return NULL;
+  }
+  
+  int fVerbose = 1;
+
+  //read genlib
+  /*
+   * GATE ZERO      1  Y=CONST0;
+   * GATE ONE       1  Y=CONST1;
+   * GATE INVX1     1  Y=!A;                        PIN * INV 1 999 1 0 1 0
+   * GATE IMPLY     1  Y=(!A+B);                    PIN * INV 1 999 1 0 1 0
+   * GATE BUFX1     1  Y=A;                         PIN * NONINV 1 999 1 0 1 0 */
+  
+  //read_genlib imply.genlib
+  Mio_Library_t * pLib = NULL;
+
+  pLib = Mio_LibraryRead( "imply.genlib", NULL, NULL, 0 ); //map/mio/mio.h
+  
+  if ( pLib == NULL )
+  {
+    printf( "Reading genlib library has failed.\n" );
+    return NULL;
+  }
+
+  if ( fVerbose )
+  {
+    printf( "Entered genlib library with %d gates from file \"%s\".\n", Mio_LibraryReadGateNum(pLib), "imply.genlib" );
+  }
+  
+  // prepare libraries
+  Mio_UpdateGenlib( pLib );
+
+  //map
+  // set defaults
+  double  DelayTarget =-1;
+  double  AreaMulti   = 0;
+  double  DelayMulti  = 0;
+  float   LogFan = 0;
+  float   Slew = 0; // choose based on the library
+  float   Gain = 250;
+  int     nGatesMin = 0;
+  int     fRecovery   = 1;
+  int     fSwitching  = 0;
+  int     fSkipFanout = 0;
+  int     fUseProfile = 0;
+  int     fUseBuffs   = 0;
+
+  pNtkRes = Abc_NtkMap( pNtk, DelayTarget, AreaMulti, DelayMulti, LogFan, Slew, Gain, nGatesMin, fRecovery, fSwitching, fSkipFanout, fUseProfile, fUseBuffs, fVerbose );
+  if ( pNtkRes == NULL )
+  {
+    Abc_Print( -1, "Mapping has failed.\n" );
+    return NULL;
+  }
+
+  //get the new network
+
+  return pNtkRes;
+}
+
 
 ////////////////////////////////////////////////////////////////////////
 ///                       END OF FILE                                ///
