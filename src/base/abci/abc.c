@@ -19528,6 +19528,8 @@ int Abc_CommandDsdFilter( Abc_Frame_t * pAbc, int argc, char ** argv )
         Abc_Print( -1, "The DSD manager is not started.\n" );
         return 0;
     }
+
+    printf( "Begin dsd_filter, nLimit = %d\n", nLimit ); 
     if ( nLimit > 0 )
         Abc_FrameSetManDsd( If_DsdManFilter(pDsd, nLimit) );
     if ( nLutSize >= 0 )
@@ -19540,6 +19542,7 @@ int Abc_CommandDsdFilter( Abc_Frame_t * pAbc, int argc, char ** argv )
         If_DsdManInvertMarks( pDsd, fVerbose );
 #ifdef ABC_USE_CUDD
     else if ( nLimit == 0 )
+        printf("TuneThresh\n");
         Id_DsdManTuneThresh( pDsd, fUnate, fThresh, fThreshHeuristic, fVerbose );
 #endif
     return 0;

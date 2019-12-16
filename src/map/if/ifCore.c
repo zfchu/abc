@@ -65,6 +65,7 @@ void If_ManSetDefaultPars( If_Par_t * pPars )
     pPars->fVerbose    =  0;
 
     pPars->fTruth = 1; //compute truth tables
+    pPars->fUseDsd = 1;
 }
 
 

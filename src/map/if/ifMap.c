@@ -34,7 +34,6 @@ extern int    Abc_ExactDelayCost( word * pTruth, int nVars, int * pArrTimeProfil
 
 
 static int Abc_NtkRenodeEvalImg( If_Man_t * p, If_Cut_t * pCut );
-static Vec_Int_t * s_vMemory  = NULL;  
 
 ////////////////////////////////////////////////////////////////////////
 ///                     FUNCTION DEFINITIONS                         ///
@@ -283,6 +282,7 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
         // compute the truth table
         pCut->iCutFunc = -1;
         pCut->fCompl = 0;
+
         if ( p->pPars->fTruth )
         {
 //            int nShared = pCut0->nLeaves + pCut1->nLeaves - pCut->nLeaves;
@@ -317,6 +317,7 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
                 assert( If_DsdManSuppSize(p->pIfDsdMan, If_CutDsdLit(p, pCut)) == (int)pCut->nLeaves );
                 //If_ManCacheRecord( p, If_CutDsdLit(p, pCut0), If_CutDsdLit(p, pCut1), nShared, If_CutDsdLit(p, pCut) );
             }
+
             // run user functions
             pCut->fUseless = 0;
             if ( p->pPars->pFuncCell || p->pPars->pFuncCell2 )
@@ -417,10 +418,11 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
         }
         
         // compute the application-specific cost and depth
-        p->pPars->pFuncCost = Abc_NtkRenodeEvalImg;
+        //p->pPars->pFuncCost = Abc_NtkRenodeEvalImg;
         pCut->fUser = (p->pPars->pFuncCost != NULL);
         pCut->Cost = p->pPars->pFuncCost? p->pPars->pFuncCost(p, pCut) : 0;
         //printf( "cost: %d \n", pCut->Cost );
+        
         if ( pCut->Cost == IF_COST_MAX )
             continue;
         // check if the cut satisfies the required times
@@ -511,7 +513,12 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
 ***********************************************************************/
 int Abc_NtkRenodeEvalImg( If_Man_t * p, If_Cut_t * pCut )  
 {    
-  printf( "TT ID: %d\n", Abc_Lit2Var( pCut->iCutFunc ) );
+  word * pTruth;
+  //printf( "TT ID: %d leaveNum:%d\n", Abc_Lit2Var( pCut->iCutFunc ), If_CutLeaveNum( pCut ) );
+  //int id = Abc_Lit2Var( pCut->iCutFunc );
+  pTruth = If_CutTruthW( p, pCut );
+  //Dau_DsdPrintFromTruth( If_CutTruthW(p, pCut), If_CutLeaveNum(pCut) );
+  Kit_DsdPrintFromTruth( (unsigned *)pTruth, If_CutLeaveNum( pCut ) ); printf( "\n" );
   If_CutPrint( pCut );
   return If_CutLeaveNum( pCut );
 }

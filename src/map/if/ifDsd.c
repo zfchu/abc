@@ -2769,9 +2769,10 @@ void Id_DsdManTuneStr( If_DsdMan_t * p, char * pStruct, int nConfls, int nProcs,
 
 void Id_DsdManTuneThresh( If_DsdMan_t * p, int fUnate, int fThresh, int fThreshHeuristic, int fVerbose )
 {
+   printf("begin tune thresh\n");
     extern int Extra_ThreshCheck( word * t, int nVars, int * pW );
     extern int Extra_ThreshHeuristic( word * t, int nVars, int * pW );
-    int fVeryVerbose = 0;
+    int fVeryVerbose = 1;
     int pW[16];
     ProgressBar * pProgress = NULL;
     If_DsdObj_t * pObj;
@@ -2814,7 +2815,10 @@ void Id_DsdManTuneThresh( If_DsdMan_t * p, int fUnate, int fThresh, int fThreshH
         if ( fVeryVerbose )
             printf( "\n" );
         if ( Value )
+        {
+            printf("Value: %d\n", Value );
             If_DsdVecObjSetMark( &p->vObjs, i );
+        }
         else
             Vec_WrdWriteEntry( p->vConfigs, i, Perm );
     }
