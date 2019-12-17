@@ -15,6 +15,7 @@
 ***********************************************************************/
 
 #include "base/main/main.h"
+#include "base/abc/abc.h"
 #include "map/mio/mio.h"
 
 ABC_NAMESPACE_IMPL_START
@@ -25,6 +26,8 @@ ABC_NAMESPACE_IMPL_START
 
 int printImgInfo( Abc_Ntk_t * pNtk );
 Abc_Ntk_t * AigMap2Img( Abc_Ntk_t * pNtk );
+Abc_Ntk_t * Truth2Aig( char * pStr );
+Abc_Ntk_t * AigScriptOpt( Abc_Ntk_t * pNtk );
 
 ////////////////////////////////////////////////////////////////////////
 ///                     FUNCTION DEFINITIONS                         ///
@@ -53,7 +56,10 @@ int Img_RunMain( Abc_Frame_t * pAbc )
   }
 
   //result = printImgInfo( pNtk );
-  Abc_Ntk_t * pNtkRes = AigMap2Img( pNtk );
+  printImgInfo( Truth2Aig("12345678") );
+  printImgInfo( AigScriptOpt( Truth2Aig("12345678") ) );
+  //Abc_Ntk_t * pNtkRes = AigMap2Img( pNtk );
+  Abc_Ntk_t * pNtkRes = AigMap2Img( AigScriptOpt( Truth2Aig( "12345678" ) ) );
 
   Abc_FrameReplaceCurrentNetwork( pAbc, pNtkRes );
 
@@ -91,6 +97,125 @@ int printImgInfo( Abc_Ntk_t * pNtk )
   return 1;
 }
 
+/**Function*************************************************************
+
+  Synopsis    [aig optimization]
+
+  Description [resyn: b; rw; rwz; b; rwz; b ]
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+Abc_Ntk_t * AigScriptOpt( Abc_Ntk_t * pNtk )
+{
+  assert( pNtk != NULL );
+  assert( Abc_NtkIsStrash( pNtk ) );
+
+  //balance parameters
+  int fDuplicate   = 0;
+  int fSelective   = 0;
+  int fUpdateLevel = 1;
+
+  Abc_Ntk_t * pNtkRes, * pNtkTemp;
+
+  //balance
+  pNtkTemp = Abc_NtkBalance( pNtk, fDuplicate, fSelective, fUpdateLevel );
+
+  if( pNtkTemp == NULL )
+  {
+    Abc_Print( -1, "Balancing has failed.\n" );
+    return NULL;
+  }
+
+  //rewriting parameters
+  int fUseZeros    = 0;
+  int fVerbose     = 0;
+  int fVeryVerbose = 0;
+  int fPlaceEnable = 0;
+  
+  //rewriting
+  if ( !Abc_NtkRewrite( pNtkTemp, fUpdateLevel, fUseZeros, fVerbose, fVeryVerbose, fPlaceEnable ) )
+  {
+    Abc_Print( -1, "Rewriting has failed.\n" );
+    return NULL;
+  }
+  
+  //rewriting with zero cost
+  if ( !Abc_NtkRewrite( pNtkTemp, fUpdateLevel, 1, fVerbose, fVeryVerbose, fPlaceEnable ) )
+  {
+    Abc_Print( -1, "Rewriting has failed.\n" );
+    return NULL;
+  }
+  
+  //balance
+  pNtkRes = Abc_NtkBalance( pNtkTemp, fDuplicate, fSelective, fUpdateLevel );
+
+  if( pNtkRes == NULL )
+  {
+    Abc_Print( -1, "Balancing has failed.\n" );
+    return NULL;
+  }
+  Abc_NtkDelete( pNtkTemp );
+  
+  //rewriting with zero cost
+  if ( !Abc_NtkRewrite( pNtkRes, fUpdateLevel, 1, fVerbose, fVeryVerbose, fPlaceEnable ) )
+  {
+    Abc_Print( -1, "Rewriting has failed.\n" );
+    return NULL;
+  }
+  
+  //balance
+  pNtkTemp = Abc_NtkBalance( pNtkRes, fDuplicate, fSelective, fUpdateLevel );
+
+  if( pNtkTemp == NULL )
+  {
+    Abc_Print( -1, "Balancing has failed.\n" );
+    Abc_NtkDelete( pNtkRes );
+    return NULL;
+  }
+  Abc_NtkDelete( pNtkRes );
+  
+  return pNtkTemp;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [read_truth and strash into aig]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+Abc_Ntk_t * Truth2Aig( char * pStr )
+{
+  Abc_Ntk_t * pNtk;
+  char * pSopCover;
+  
+  pSopCover = Abc_SopFromTruthHex(pStr);
+  
+  if ( pSopCover == NULL || pSopCover[0] == 0 )
+  {
+    ABC_FREE( pSopCover );
+    Abc_Print( -1, "Reading truth table has failed.\n" );
+    return NULL;
+  }
+
+  pNtk = Abc_NtkCreateWithNode( pSopCover );
+  ABC_FREE( pSopCover );
+  if ( pNtk == NULL )
+  {
+    Abc_Print( -1, "Deriving the network has failed.\n" );
+    return NULL;
+  }
+  
+  return Abc_NtkStrash( pNtk, 0, 1, 0 );
+}
+
 
 /**Function*************************************************************
 
@@ -115,7 +240,7 @@ Abc_Ntk_t * AigMap2Img( Abc_Ntk_t * pNtk )
     return NULL;
   }
   
-  int fVerbose = 1;
+  int fVerbose = 0;
 
   //read genlib
   /*
