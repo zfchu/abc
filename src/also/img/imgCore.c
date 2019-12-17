@@ -27,7 +27,10 @@ ABC_NAMESPACE_IMPL_START
 int printImgInfo( Abc_Ntk_t * pNtk );
 Abc_Ntk_t * AigMap2Img( Abc_Ntk_t * pNtk );
 Abc_Ntk_t * Truth2Aig( char * pStr );
-Abc_Ntk_t * AigScriptOpt( Abc_Ntk_t * pNtk );
+Abc_Ntk_t * AigScriptOpt_Resyn( Abc_Ntk_t * pNtk );
+Abc_Ntk_t * AigScriptOpt_Resyn2( Abc_Ntk_t * pNtk );
+Abc_Ntk_t * AigScriptCombineOpt( Abc_Ntk_t * pNtk );
+Abc_Ntk_t * AigIterativeOpt_Area( Abc_Ntk_t * pNtk );
 
 ////////////////////////////////////////////////////////////////////////
 ///                     FUNCTION DEFINITIONS                         ///
@@ -56,10 +59,12 @@ int Img_RunMain( Abc_Frame_t * pAbc )
   }
 
   //result = printImgInfo( pNtk );
-  printImgInfo( Truth2Aig("12345678") );
-  printImgInfo( AigScriptOpt( Truth2Aig("12345678") ) );
+  //printImgInfo( Truth2Aig("12345678") );
+  //printImgInfo( AigScriptOpt_Resyn2( AigScriptOpt_Resyn( Truth2Aig("12345678ffeeabc1") ) ) );
   //Abc_Ntk_t * pNtkRes = AigMap2Img( pNtk );
-  Abc_Ntk_t * pNtkRes = AigMap2Img( AigScriptOpt( Truth2Aig( "12345678" ) ) );
+  //Abc_Ntk_t * pNtkRes = AigMap2Img( AigScriptOpt_Resyn2( AigScriptOpt_Resyn( Truth2Aig( "12345678ffeeabc1" ) ) ) );
+  //Abc_Ntk_t * pNtkRes = AigMap2Img( AigScriptCombineOpt( Truth2Aig( "12345678ffeeabc1" ) ) );
+  Abc_Ntk_t * pNtkRes = AigMap2Img( AigIterativeOpt_Area( Truth2Aig( "12345678ffeeabcd" ) ) );
 
   Abc_FrameReplaceCurrentNetwork( pAbc, pNtkRes );
 
@@ -99,16 +104,108 @@ int printImgInfo( Abc_Ntk_t * pNtk )
 
 /**Function*************************************************************
 
-  Synopsis    [aig optimization]
+  Synopsis    [aig script iterative optimization]
 
-  Description [resyn: b; rw; rwz; b; rwz; b ]
+  Description [ iterative{ resyn; resyn2} until no more area/depth improvment ]
                
   SideEffects []
 
   SeeAlso     []
 
 ***********************************************************************/
-Abc_Ntk_t * AigScriptOpt( Abc_Ntk_t * pNtk )
+Abc_Ntk_t * AigIterativeOpt_Area( Abc_Ntk_t * pNtk )
+{
+  Abc_Ntk_t * pNtkTemp, * pNtkRes = NULL;
+  int fVerbose = 0;
+
+  int area, depth;
+
+  pNtkRes = AigScriptCombineOpt( pNtk );
+
+  area  = Abc_NtkNodeNum( pNtkRes );
+  depth = Abc_AigLevel( pNtkRes );
+
+  if( fVerbose )
+  {
+    printf( "current area: %d, depth: %d \n", area, depth );
+  }
+
+  while( 1 )
+  {
+    pNtkTemp = AigScriptCombineOpt( pNtkRes );
+
+    if( fVerbose )
+    {
+      printf( "opt area: %d\n", Abc_NtkNodeNum( pNtkTemp ) );
+    }
+
+    if( Abc_NtkNodeNum( pNtkTemp ) < area )
+    {
+      area  = Abc_NtkNodeNum( pNtkTemp );
+      depth = Abc_AigLevel( pNtkTemp);
+      
+      if( fVerbose )
+      {
+        printf( "current area: %d, depth: %d \n", area, depth );
+      }
+      pNtkRes = pNtkTemp;
+      Abc_NtkDelete( pNtkTemp );
+    }
+    else if( Abc_NtkNodeNum( pNtkTemp ) == area && Abc_AigLevel( pNtkTemp ) < depth )
+    {
+      depth = Abc_AigLevel( pNtkTemp );
+      if( fVerbose )
+      {
+        printf( "current area: %d, depth: %d \n", area, depth );
+      }
+
+      pNtkRes = pNtkTemp;
+      Abc_NtkDelete( pNtkTemp );
+    }
+    else
+    {
+      Abc_NtkDelete( pNtkTemp );
+      return pNtkRes;
+    }
+  }
+
+  return pNtkRes;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [aig script optimization]
+
+  Description [ resyn; resyn2 ]
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+Abc_Ntk_t *  AigScriptCombineOpt( Abc_Ntk_t * pNtk )
+{
+  Abc_Ntk_t * pNtkTemp, * pNtkRes;
+
+  pNtkTemp = AigScriptOpt_Resyn( pNtk );
+  pNtkRes  = AigScriptOpt_Resyn2( pNtkTemp );
+  Abc_NtkDelete( pNtkTemp );
+
+  return pNtkRes;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [aig script optimization]
+
+  Description [resyn: "b; rw; rwz; b; rwz; b" ]
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+Abc_Ntk_t * AigScriptOpt_Resyn( Abc_Ntk_t * pNtk )
 {
   assert( pNtk != NULL );
   assert( Abc_NtkIsStrash( pNtk ) );
@@ -178,6 +275,125 @@ Abc_Ntk_t * AigScriptOpt( Abc_Ntk_t * pNtk )
   Abc_NtkDelete( pNtkRes );
   
   return pNtkTemp;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [aig script optimization]
+
+  Description [resyn2: "b; rw; rf; b; rw; rwz; b; rfz; rwz; b"]
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+Abc_Ntk_t * AigScriptOpt_Resyn2( Abc_Ntk_t * pNtk )
+{
+  assert( pNtk != NULL );
+  assert( Abc_NtkIsStrash( pNtk ) );
+
+  //balance parameters
+  int fDuplicate   = 0;
+  int fSelective   = 0;
+  int fUpdateLevel = 1;
+
+  Abc_Ntk_t * pNtkRes, * pNtkTemp;
+
+  //balance
+  pNtkTemp = Abc_NtkBalance( pNtk, fDuplicate, fSelective, fUpdateLevel );
+
+  if( pNtkTemp == NULL )
+  {
+    Abc_Print( -1, "Balancing has failed.\n" );
+    return NULL;
+  }
+
+  //rewriting parameters
+  int fUseZeros    = 0;
+  int fVerbose     = 0;
+  int fVeryVerbose = 0;
+  int fPlaceEnable = 0;
+  
+  //rewriting
+  if ( !Abc_NtkRewrite( pNtkTemp, fUpdateLevel, fUseZeros, fVerbose, fVeryVerbose, fPlaceEnable ) )
+  {
+    Abc_Print( -1, "Rewriting has failed.\n" );
+    return NULL;
+  }
+
+  //refactor parameters
+  int nNodeSizeMax = 10;
+  int nConeSizeMax = 16;
+  int fUseDcs      =  0;
+  
+  //refactor
+  if ( !Abc_NtkRefactor( pNtkTemp, nNodeSizeMax, nConeSizeMax, fUpdateLevel, fUseZeros, fUseDcs, fVerbose ) )
+  {
+    Abc_Print( -1, "Refactoring has failed.\n" );
+    return NULL;
+  }
+  
+  //balance
+  pNtkRes = Abc_NtkBalance( pNtkTemp, fDuplicate, fSelective, fUpdateLevel );
+
+  if( pNtkRes == NULL )
+  {
+    Abc_Print( -1, "Balancing has failed.\n" );
+    return NULL;
+  }
+  Abc_NtkDelete( pNtkTemp );
+  
+  //rewriting
+  if ( !Abc_NtkRewrite( pNtkRes, fUpdateLevel, fUseZeros, fVerbose, fVeryVerbose, fPlaceEnable ) )
+  {
+    Abc_Print( -1, "Rewriting has failed.\n" );
+    return NULL;
+  }
+  
+  //rewriting with zero cost
+  if ( !Abc_NtkRewrite( pNtkRes, fUpdateLevel, 1, fVerbose, fVeryVerbose, fPlaceEnable ) )
+  {
+    Abc_Print( -1, "Rewriting has failed.\n" );
+    return NULL;
+  }
+  
+  //balance
+  pNtkTemp = Abc_NtkBalance( pNtkRes, fDuplicate, fSelective, fUpdateLevel );
+
+  if( pNtkTemp == NULL )
+  {
+    Abc_Print( -1, "Balancing has failed.\n" );
+    return NULL;
+  }
+  Abc_NtkDelete( pNtkRes );
+  
+  //refactor with zero cost
+  if ( !Abc_NtkRefactor( pNtkTemp, nNodeSizeMax, nConeSizeMax, fUpdateLevel, 1, fUseDcs, fVerbose ) )
+  {
+    Abc_Print( -1, "Refactoring has failed.\n" );
+    return NULL;
+  }
+  
+  //rewriting with zero cost
+  if ( !Abc_NtkRewrite( pNtkTemp, fUpdateLevel, 1, fVerbose, fVeryVerbose, fPlaceEnable ) )
+  {
+    Abc_Print( -1, "Rewriting has failed.\n" );
+    return NULL;
+  }
+  
+  //balance
+  pNtkRes = Abc_NtkBalance( pNtkTemp, fDuplicate, fSelective, fUpdateLevel );
+
+  if( pNtkRes == NULL )
+  {
+    Abc_Print( -1, "Balancing has failed.\n" );
+    Abc_NtkDelete( pNtkTemp );
+    return NULL;
+  }
+  Abc_NtkDelete( pNtkTemp );
+  
+  return pNtkRes;
 }
 
 /**Function*************************************************************
