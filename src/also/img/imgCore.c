@@ -64,7 +64,9 @@ int Img_RunMain( Abc_Frame_t * pAbc )
   //Abc_Ntk_t * pNtkRes = AigMap2Img( pNtk );
   //Abc_Ntk_t * pNtkRes = AigMap2Img( AigScriptOpt_Resyn2( AigScriptOpt_Resyn( Truth2Aig( "12345678ffeeabc1" ) ) ) );
   //Abc_Ntk_t * pNtkRes = AigMap2Img( AigScriptCombineOpt( Truth2Aig( "12345678ffeeabc1" ) ) );
-  Abc_Ntk_t * pNtkRes = AigMap2Img( AigIterativeOpt_Area( Truth2Aig( "12345678ffeeabcd" ) ) );
+  //Abc_Ntk_t * pNtkRes = AigMap2Img( AigIterativeOpt_Area( Truth2Aig( "12345678ffeeabcd" ) ) );
+  assert( Abc_NtkIsStrash( pNtk ) );
+  Abc_Ntk_t * pNtkRes = AigMap2Img( AigIterativeOpt_Area(  pNtk ) );
 
   Abc_FrameReplaceCurrentNetwork( pAbc, pNtkRes );
 
@@ -148,7 +150,7 @@ Abc_Ntk_t * AigIterativeOpt_Area( Abc_Ntk_t * pNtk )
       {
         printf( "current area: %d, depth: %d \n", area, depth );
       }
-      pNtkRes = pNtkTemp;
+      pNtkRes = Abc_NtkStrash( pNtkTemp, 0, 1, 0 );
       Abc_NtkDelete( pNtkTemp );
     }
     else if( Abc_NtkNodeNum( pNtkTemp ) == area && Abc_AigLevel( pNtkTemp ) < depth )
@@ -159,17 +161,17 @@ Abc_Ntk_t * AigIterativeOpt_Area( Abc_Ntk_t * pNtk )
         printf( "current area: %d, depth: %d \n", area, depth );
       }
 
-      pNtkRes = pNtkTemp;
+      pNtkRes = Abc_NtkStrash( pNtkTemp, 0, 1, 0 );
       Abc_NtkDelete( pNtkTemp );
     }
     else
     {
       Abc_NtkDelete( pNtkTemp );
-      return pNtkRes;
+      return Abc_NtkStrash( pNtkRes, 0, 1, 0 );
     }
   }
 
-  return pNtkRes;
+  return Abc_NtkStrash( pNtkRes, 0, 1, 0 );
 }
 
 /**Function*************************************************************
@@ -191,7 +193,7 @@ Abc_Ntk_t *  AigScriptCombineOpt( Abc_Ntk_t * pNtk )
   pNtkRes  = AigScriptOpt_Resyn2( pNtkTemp );
   Abc_NtkDelete( pNtkTemp );
 
-  return pNtkRes;
+  return Abc_NtkStrash( pNtkRes, 0, 1, 0 );
 }
 
 /**Function*************************************************************
@@ -274,7 +276,7 @@ Abc_Ntk_t * AigScriptOpt_Resyn( Abc_Ntk_t * pNtk )
   }
   Abc_NtkDelete( pNtkRes );
   
-  return pNtkTemp;
+  return Abc_NtkStrash( pNtkTemp, 0, 1, 0 );
 }
 
 /**Function*************************************************************
@@ -393,7 +395,7 @@ Abc_Ntk_t * AigScriptOpt_Resyn2( Abc_Ntk_t * pNtk )
   }
   Abc_NtkDelete( pNtkTemp );
   
-  return pNtkRes;
+  return Abc_NtkStrash( pNtkRes, 0, 1, 0 );
 }
 
 /**Function*************************************************************
