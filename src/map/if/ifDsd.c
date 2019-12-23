@@ -2774,6 +2774,7 @@ void Id_DsdManTuneThresh( If_DsdMan_t * p, int fUnate, int fThresh, int fThreshH
     extern int Extra_ThreshCheck( word * t, int nVars, int * pW );
     extern int Extra_ThreshHeuristic( word * t, int nVars, int * pW );
     int fVeryVerbose = 1;
+    fVerbose = 1;
     int pW[16];
     ProgressBar * pProgress = NULL;
     If_DsdObj_t * pObj;
@@ -2848,6 +2849,71 @@ void Id_DsdManTuneThresh( If_DsdMan_t * p, int fUnate, int fThresh, int fThreshH
 void If_DsdManTuneImg( If_DsdMan_t * p, int fVerbose )
 {
   printf( "Begin Tune Img\n" );
+  extern void Extra_PrintHexadecimalString( char * pString, unsigned Sign[], int nVars );
+  
+  int fVeryVerbose = 0;
+  ProgressBar * pProgress = NULL;
+  If_DsdObj_t * pObj;
+  word * pTruth, Perm;
+  int i, nVars;
+  char buffer[1000];
+
+  abctime clk = Abc_Clock();
+  
+  if ( p->nObjsPrev > 0 )
+    printf( "Starting the tuning process from object %d (out of %d).\n", p->nObjsPrev, Vec_PtrSize(&p->vObjs) );
+  
+  // clean the attributes
+  If_DsdVecForEachObj( &p->vObjs, pObj, i )
+    if ( i >= p->nObjsPrev )
+      pObj->fMark = 0;
+  
+  if ( p->vConfigs == NULL )
+    p->vConfigs = Vec_WrdStart( Vec_PtrSize(&p->vObjs) );
+  else
+    Vec_WrdFillExtra( p->vConfigs, Vec_PtrSize(&p->vObjs), 0 );
+  
+  pProgress = Extra_ProgressBarStart( stdout, Vec_PtrSize(&p->vObjs) );
+  
+  If_DsdVecForEachObjStart( &p->vObjs, pObj, i, p->nObjsPrev )
+  {
+    if ( (i & 0xFF) == 0 )
+      Extra_ProgressBarUpdate( pProgress, i, NULL );
+    
+    nVars = If_DsdObjSuppSize(pObj);
+
+    if( nVars == 0 )
+      continue;
+
+    assert( nVars <= 4 && "currently only <= 4 variables is supported" );
+    
+    pTruth = If_DsdManComputeTruth( p, Abc_Var2Lit(i, 0), NULL );
+    //Dau_DsdPrintFromTruth( pTruth, nVars );
+
+    Extra_PrintHexadecimalString( buffer, (unsigned *) pTruth, nVars );
+
+    //printf( "tt: %s\n", buffer );
+
+    int imgSize = getImgSize( buffer );
+    
+    Perm = 0;
+    
+    if ( imgSize <= 10 )
+    {
+      If_DsdVecObjSetMark( &p->vObjs, i );
+    }
+    else
+    {
+      Vec_WrdWriteEntry( p->vConfigs, i, Perm );
+    }
+  }
+  p->nObjsPrev = 0;
+  p->LutSize = 0;
+  Extra_ProgressBarStop( pProgress );
+  printf( "Finished matching %d functions. ", Vec_PtrSize(&p->vObjs) );
+  Abc_PrintTime( 1, "Time", Abc_Clock() - clk );
+  if ( fVeryVerbose )
+    If_DsdManPrintDistrib( p );
 }
 
 ////////////////////////////////////////////////////////////////////////

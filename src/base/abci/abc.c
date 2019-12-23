@@ -19533,8 +19533,10 @@ int Abc_CommandDsdFilter( Abc_Frame_t * pAbc, int argc, char ** argv )
     }
 
     if ( fImg )
+    {
         If_DsdManTuneImg( pDsd, fVerbose );
         return 0;
+    }
     if ( nLimit > 0 )
         Abc_FrameSetManDsd( If_DsdManFilter(pDsd, nLimit) );
     if ( nLutSize >= 0 )
