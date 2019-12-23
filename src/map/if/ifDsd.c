@@ -25,6 +25,7 @@
 #include "sat/bsat/satSolver.h"
 #include "aig/gia/gia.h"
 #include "bool/kit/kit.h"
+#include "also/img/img.h"
 
 #ifdef ABC_USE_CUDD
 #include "bdd/extrab/extraBdd.h"
@@ -2832,6 +2833,22 @@ void Id_DsdManTuneThresh( If_DsdMan_t * p, int fUnate, int fThresh, int fThreshH
 }
 
 #endif // ABC_USE_CUDD are used
+        
+/**Function*************************************************************
+
+  Synopsis    [dsd_filter : make the function that has low-cost implication logic network realization]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+void If_DsdManTuneImg( If_DsdMan_t * p, int fVerbose )
+{
+  printf( "Begin Tune Img\n" );
+}
 
 ////////////////////////////////////////////////////////////////////////
 ///                       END OF FILE                                ///

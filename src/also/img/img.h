@@ -44,6 +44,8 @@ ABC_NAMESPACE_HEADER_START
 
 /*=== imgCore.c ==========================================================*/
 extern int Img_RunMain( Abc_Frame_t * pAbc ); 
+extern int getImgSize( char * pStr );
+extern int getImgLevel( char * pStr );
 
 
 ABC_NAMESPACE_HEADER_END

@@ -19472,9 +19472,9 @@ usage:
 int Abc_CommandDsdFilter( Abc_Frame_t * pAbc, int argc, char ** argv )
 {
     If_DsdMan_t * pDsd = (If_DsdMan_t *)Abc_FrameReadManDsd();
-    int c, nLimit = 0, nLutSize = -1, fCleanOccur = 0, fCleanMarks = 0, fInvMarks = 0, fUnate = 0, fThresh = 0, fThreshHeuristic = 0, fVerbose = 0;
+    int c, nLimit = 0, nLutSize = -1, fCleanOccur = 0, fCleanMarks = 0, fInvMarks = 0, fUnate = 0, fThresh = 0, fThreshHeuristic = 0, fVerbose = 0, fImg = 0;
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "LKomiutsvh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "LKomiutsgvh" ) ) != EOF )
     {
         switch ( c )
         {
@@ -19514,6 +19514,9 @@ int Abc_CommandDsdFilter( Abc_Frame_t * pAbc, int argc, char ** argv )
         case 's':
             fThreshHeuristic ^= 1;
             break;
+        case 'g':
+            fImg ^= 1;
+            break;
         case 'v':
             fVerbose ^= 1;
             break;
@@ -19529,7 +19532,9 @@ int Abc_CommandDsdFilter( Abc_Frame_t * pAbc, int argc, char ** argv )
         return 0;
     }
 
-    printf( "Begin dsd_filter, nLimit = %d\n", nLimit ); 
+    if ( fImg )
+        If_DsdManTuneImg( pDsd, fVerbose );
+        return 0;
     if ( nLimit > 0 )
         Abc_FrameSetManDsd( If_DsdManFilter(pDsd, nLimit) );
     if ( nLutSize >= 0 )
@@ -19548,7 +19553,7 @@ int Abc_CommandDsdFilter( Abc_Frame_t * pAbc, int argc, char ** argv )
     return 0;
 
 usage:
-    Abc_Print( -2, "usage: dsd_filter [-LK num] [-omiutsvh]\n" );
+    Abc_Print( -2, "usage: dsd_filter [-LK num] [-omiutsgvh]\n" );
     Abc_Print( -2, "\t         filtering structured and modifying parameters of DSD manager\n" );
     Abc_Print( -2, "\t-L num : remove structures with fewer occurrences that this [default = %d]\n", nLimit );
     Abc_Print( -2, "\t-K num : new LUT size to set for the DSD manager [default = %d]\n",           nLutSize );
@@ -19558,6 +19563,7 @@ usage:
     Abc_Print( -2, "\t-u     : toggles marking unate functions [default = %s]\n",                   fUnate? "yes": "no" );
     Abc_Print( -2, "\t-t     : toggles marking threshold functions [default = %s]\n",               fThresh? "yes": "no" );
     Abc_Print( -2, "\t-s     : toggles marking threshold functions heuristically [default = %s]\n", fThreshHeuristic?"yes":"no");
+    Abc_Print( -2, "\t-g     : toggles marking low-cost implication logic network realization [default = %s]\n", fImg?"yes":"no");
     Abc_Print( -2, "\t-v     : toggles verbose output [default = %s]\n",                            fVerbose? "yes": "no" );
     Abc_Print( -2, "\t-h     : print the command usage\n");
     Abc_Print( -2, "\t        \n" );

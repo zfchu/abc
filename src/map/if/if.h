@@ -591,6 +591,7 @@ extern unsigned        If_DsdManCheckXY( If_DsdMan_t * p, int iDsd, int LutSize,
 extern int             If_CutDsdBalanceEval( If_Man_t * p, If_Cut_t * pCut, Vec_Int_t * vAig );
 extern int             If_CutDsdBalancePinDelays( If_Man_t * p, If_Cut_t * pCut, char * pPerm );
 extern void            Id_DsdManTuneThresh( If_DsdMan_t * p, int fUnate, int fThresh, int fThreshHeuristic, int fVerbose );
+extern void            If_DsdManTuneImg( If_DsdMan_t * p, int fVerbose );
 /*=== ifLib.c =============================================================*/
 extern If_LibLut_t *   If_LibLutRead( char * FileName );
 extern If_LibLut_t *   If_LibLutDup( If_LibLut_t * p );

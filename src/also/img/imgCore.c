@@ -31,6 +31,8 @@ Abc_Ntk_t * AigScriptOpt_Resyn( Abc_Ntk_t * pNtk );
 Abc_Ntk_t * AigScriptOpt_Resyn2( Abc_Ntk_t * pNtk );
 Abc_Ntk_t * AigScriptCombineOpt( Abc_Ntk_t * pNtk );
 Abc_Ntk_t * AigIterativeOpt_Area( Abc_Ntk_t * pNtk );
+int getImgSize( char * pStr );
+int getImgLevel( char * pStr );
 
 ////////////////////////////////////////////////////////////////////////
 ///                     FUNCTION DEFINITIONS                         ///
@@ -71,6 +73,31 @@ int Img_RunMain( Abc_Frame_t * pAbc )
   Abc_FrameReplaceCurrentNetwork( pAbc, pNtkRes );
 
   return 1;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [ get the implication logic network statistics from a truth table]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+int getImgSize( char * pStr )
+{
+  Abc_Ntk_t * pNtkRes = AigMap2Img( AigIterativeOpt_Area( Truth2Aig( pStr ) ) );
+
+  return Abc_NtkNodeNum( pNtkRes );
+}
+
+int getImgLevel( char * pStr )
+{
+  Abc_Ntk_t * pNtkRes = AigMap2Img( AigIterativeOpt_Area( Truth2Aig( pStr ) ) );
+
+  return Abc_AigLevel( pNtkRes );
 }
  
 /**Function*************************************************************
